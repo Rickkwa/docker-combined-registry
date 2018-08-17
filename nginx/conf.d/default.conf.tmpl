@@ -2,14 +2,6 @@ server {
     listen       80;
     server_name  localhost;
 
-    #charset koi8-r;
-    #access_log  /var/log/nginx/host.access.log  main;
-
-    location / {
-        root   /usr/local/openresty/nginx/html;
-        index  index.html index.htm;
-    }
-
     location = /metrics {
         content_by_lua '
             metric_connections:set(ngx.var.connections_reading, {"reading"})
@@ -19,37 +11,30 @@ server {
         ';
     }
 
-
-    #error_page  404              /404.html;
-
-    # redirect server error pages to the static page /50x.html
-    #
-    error_page   500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/local/openresty/nginx/html;
+    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/manifests/[a-zA-Z0-9_.-]+$ {
+        rewrite_by_lua_block {
+            ngx.req.read_body()
+            local res = ngx.location.capture("/image-test", {method = ngx.HTTP_GET, args = {image = ngx.var.uri}})
+            ngx.say(res.status)
+            ngx.say(res.body)
+            --if res.status == 200 then
+            --    ngx.header.Set_Cookie = res.header["Set-Cookie"] # pass along the cookie set by the backend
+            --    return ngx.redirect("/shows/")
+            --else
+            --    return ngx.redirect("/login.html")
+            --end
+        }
+        #return 201;
     }
 
-    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
-    #
-    #location ~ \.php$ {
-    #    proxy_pass   http://127.0.0.1;
-    #}
+    location = /image-test {
+        internal;
+        proxy_pass http://reg_proxy/$image;
+    }
 
-    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
-    #
-    #location ~ \.php$ {
-    #    root           /usr/local/openresty/nginx/html;
-    #    fastcgi_pass   127.0.0.1:9000;
-    #    fastcgi_index  index.php;
-    #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
-    #    include        fastcgi_params;
-    #}
-
-    # deny access to .htaccess files, if Apache's document root
-    # concurs with nginx's one
-    #
-    #location ~ /\.ht {
-    #    deny  all;
+    #error_page   500 502 503 504  /50x.html;
+    #location = /50x.html {
+    #    root   /usr/local/openresty/nginx/html;
     #}
 }
 
