@@ -1,0 +1,43 @@
+version: '3.3'
+
+
+services:
+  registry-nginx:
+    image: rickykwan.ca/openresty-registry-router:1.0.0
+    build:
+      context: ./nginx
+      dockerfile: docker/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro"
+      - "./nginx/conf.d/:/etc/nginx/templates_conf.d/:ro"
+    restart: unless-stopped
+    depends_on:
+      - registry-hosted
+      - registry-proxy
+
+  registry-hosted:
+    image: registry:2.6.2
+    ports:
+      - 5001:5000
+    volumes:
+      - "hosted-data:/var/lib/registry:rw"
+      - "./hosted/config.yml:/etc/docker/registry/config.yml:ro"
+    restart: unless-stopped
+
+  registry-proxy:
+    image: registry:2.6.2
+    ports:
+      - 5002:5000
+    volumes:
+      - "proxy-data:/var/lib/registry:rw"
+      - "./proxy/config.yml:/etc/docker/registry/config.yml:ro"
+    restart: unless-stopped
+
+
+volumes:
+  hosted-data:
+  proxy-data:
+
