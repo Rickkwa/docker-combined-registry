@@ -5,7 +5,7 @@ EXPOSE 80 443
 RUN opm get knyar/nginx-lua-prometheus=0.20171117
 
 COPY ./docker/entrypoint.sh /opt/entrypoint.sh
-COPY ./conf.d/ /etc/nginx/conf.d
+COPY ./conf.d/ /etc/nginx/templates_conf.d
 
 ENTRYPOINT ["bash", "/opt/entrypoint.sh"]
 
