@@ -17,10 +17,11 @@ server {
             local res = ngx.location.capture("/image-test" .. ngx.var.uri, {
                 method = ngx.HTTP_GET
             })
-            if res.status == 200 then
-                ngx.var.chosen_backend = 'reg_proxy'
-            else
+            if res.status ~= 200 or ngx.req.get_method() ~= "GET" then
                 ngx.var.chosen_backend = 'reg_hosted'
+            else
+                -- TODO: can't we re-use the results from the ngx.location.capture?
+                ngx.var.chosen_backend = 'reg_proxy'
             end
         }
         proxy_pass http://$chosen_backend;
