@@ -11,7 +11,7 @@ server {
         ';
     }
 
-    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/manifests/[a-zA-Z0-9_.-]+$ {
+    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/manifests/[a-zA-Z0-9_.-:]+$ {
         set $chosen_backend '';
         access_by_lua_block {
             local res = ngx.location.capture("/image-test" .. ngx.var.uri, {
@@ -28,9 +28,30 @@ server {
         proxy_pass http://$chosen_backend;
     }
 
-    location ~ /image-test/(?<uri_to_test>.+) {
+    location ~ ^/v2/$ {
+        content_by_lua_block {
+            local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
+            local proxy_res = ngx.location.capture("/ping-backend/reg_proxy")
+            if hosted_res.status == 200 and proxy_res.status == 200 then
+                ngx.exit(200)
+            else
+                ngx.exit(503)
+            end
+        }
+    }
+
+    location = /v2 {
+        return 301 /v2/;
+    }
+
+    location ~ ^/image-test/(?<uri_to_test>.+) {
         internal;
         proxy_pass http://reg_proxy/$uri_to_test;
+    }
+
+    location ~ ^/ping-backend/(?<backend>.+) {
+        internal;
+        proxy_pass http://$backend/v2/;
     }
 
     error_page   500 502 503 504  /50x.html;
