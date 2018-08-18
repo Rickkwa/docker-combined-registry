@@ -14,7 +14,6 @@ server {
     location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/manifests/[a-zA-Z0-9_.-]+$ {
         set $chosen_backend '';
         access_by_lua_block {
-            local lua_request_uri = ngx.var.uri
             local res = ngx.location.capture("/image-test" .. ngx.var.uri, {
                 method = ngx.HTTP_GET
             })
