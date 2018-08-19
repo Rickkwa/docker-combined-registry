@@ -35,11 +35,7 @@ jobs:
     # Test private registry
     - stage: test
       before_script:
-        - |
-          cat <<EOF > Dockerfile
-          FROM alpine:latest
-          RUN echo "123" > /opt/test.txt
-          EOF
+        - echo -e "FROM alpine:latest\nRUN echo '123' > /opt/test.txt\n" > Dockerfile
         - docker build -t registry.localhost/mytestimage:latest .
       script:
         - docker push registry.localhost/mytestimage:latest
