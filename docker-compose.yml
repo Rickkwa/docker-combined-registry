@@ -23,8 +23,6 @@ services:
 
   registry-hosted:
     image: registry:2.6.2
-    ports:
-      - 5001:5000
     volumes:
       - "hosted-data:/var/lib/registry:rw"
       - "./hosted/config.yml:/etc/docker/registry/config.yml:ro"
@@ -32,8 +30,6 @@ services:
 
   registry-proxy:
     image: registry:2.6.2
-    ports:
-      - 5002:5000
     volumes:
       - "proxy-data:/var/lib/registry:rw"
       - "./proxy/config.yml:/etc/docker/registry/config.yml:ro"

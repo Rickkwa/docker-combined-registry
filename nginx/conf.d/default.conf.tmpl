@@ -40,13 +40,10 @@ server {
         }
     }
 
-    location ~ ^/v2/(_catalog|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/tags/list) {
+    # /v2/_catalog or /v2/<name>/tags/list or /v2/<name>/blobs/uploads or /v2/<name>/blobs/uploads/<uuid>
+    location ~ ^/v2/(_catalog|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/tags/list|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/blobs/uploads(?:/[a-zA-Z0-9-]*)?) {
         proxy_pass http://reg_hosted;
     }
-
-    # TODO: all API calls to /v2/<name>/blobs/uploads/<uuid> goes to hosted (regardless of method)
-    # TODO: where does DELETE of /v2/<name>/blobs/<digest> go? Only hosted? Deleting proxy requires you to go directly to proxy.
-    # TODO: where does DELETE/PUT of /v2/<name>/manifests/<reference> go?
 
     location ~ ^/proxy-forwarder/(?<uri_to_test>.+) {
         internal;
