@@ -1,0 +1,47 @@
+notifications:
+  email: false
+
+language: python
+
+python: 3.6
+
+addons:
+  hosts:
+    - registry.localhost
+    - registry-hosted.localhost
+    - registry-proxy.localhost
+
+sudo: true
+
+stages:
+  - test
+
+services:
+  - docker
+
+before_install:
+  - docker-compose build
+
+install:
+  - docker-compose up -d
+
+jobs:
+  include:
+    # Test dockerhub mirror
+    - stage: test
+      script:
+        - docker pull registry.localhost/library/nginx:latest
+
+    # Test private registry
+    - stage: test
+      before_script:
+        - |
+          cat <<EOF > Dockerfile
+          FROM alpine:latest
+          RUN echo "123" > /opt/test.txt
+          EOF
+        - docker build -t registry.localhost/mytestimage:latest .
+      script:
+        - docker push registry.localhost/mytestimage:latest
+        - docker rmi registry.localhost/mytestimage:latest
+        - docker pull registry.localhost/mytestimage:latest
