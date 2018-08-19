@@ -1,0 +1,9 @@
+server {
+    listen       80;
+    server_name  ${PROXY_HOSTNAME};
+
+    location / {
+        proxy_pass http://reg_proxy;
+    }
+}
+

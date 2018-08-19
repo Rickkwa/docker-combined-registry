@@ -1,0 +1,78 @@
+server {
+    listen       80;
+    server_name  ${AGGREGATE_HOSTNAME};
+
+    location = /metrics {
+        content_by_lua '
+            metric_connections:set(ngx.var.connections_reading, {"reading"})
+            metric_connections:set(ngx.var.connections_waiting, {"waiting"})
+            metric_connections:set(ngx.var.connections_writing, {"writing"})
+            prometheus:collect()
+        ';
+    }
+
+    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/(?:manifests|blobs)/(?:sha256:)?[a-zA-Z0-9_.-]+$ {
+        set $chosen_backend '';
+        access_by_lua_block {
+            local res = ngx.location.capture("/proxy-forwarder" .. ngx.var.uri, {
+                method = ngx.HTTP_GET
+            })
+            if res.status ~= 200 or ngx.var.request_method ~= "GET" then
+                ngx.var.chosen_backend = 'reg_hosted'
+            else
+                -- TODO: can't we re-use the results from the ngx.location.capture?
+                ngx.var.chosen_backend = 'reg_proxy'
+            end
+        }
+        proxy_pass http://$chosen_backend;
+    }
+
+    location ~ ^/v2/$ {
+        default_type text/plain;
+        content_by_lua_block {
+            local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
+            local proxy_res = ngx.location.capture("/ping-backend/reg_proxy")
+            if hosted_res.status == 200 and proxy_res.status == 200 then
+                ngx.exit(200)
+            else
+                ngx.exit(503)
+            end
+        }
+    }
+
+    # /v2/_catalog or /v2/<name>/tags/list or /v2/<name>/blobs/uploads or /v2/<name>/blobs/uploads/<uuid>
+    location ~ ^/v2/(_catalog|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/tags/list|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/blobs/uploads(?:/[a-zA-Z0-9-]*)?) {
+        proxy_pass http://reg_hosted;
+    }
+
+    location ~ ^/proxy-forwarder/(?<uri_to_test>.+) {
+        internal;
+        proxy_pass http://reg_proxy/$uri_to_test;
+    }
+
+    location = /v2 {
+        return 301 /v2/;
+    }
+
+    location ~ ^/ping-backend/(?<backend>.+) {
+        internal;
+        proxy_pass http://$backend/v2/;
+    }
+
+    location = /healthcheck {
+        default_type application/json;
+        content_by_lua_block {
+            local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
+            local proxy_res = ngx.location.capture("/ping-backend/reg_proxy")
+            ngx.status = 200
+            ngx.say(string.format('{"proxy": "%s", "hosted": "%s"}', proxy_res.status, hosted_res.status))
+            ngx.exit(ngx.OK)
+        }
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/local/openresty/nginx/html;
+    }
+}
+
