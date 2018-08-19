@@ -11,10 +11,10 @@ server {
         ';
     }
 
-    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/(?:manifests|blobs)/[a-zA-Z0-9_.-:]+$ {
+    location ~ ^/v2/[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/(?:manifests|blobs)/(?:sha256:)?[a-zA-Z0-9_.-]+$ {
         set $chosen_backend '';
         access_by_lua_block {
-            local res = ngx.location.capture("/fowarder" .. ngx.var.uri, {
+            local res = ngx.location.capture("/proxy-forwarder" .. ngx.var.uri, {
                 method = ngx.HTTP_GET
             })
             if res.status ~= 200 or ngx.var.request_method ~= "GET" then
@@ -23,12 +23,12 @@ server {
                 -- TODO: can't we re-use the results from the ngx.location.capture?
                 ngx.var.chosen_backend = 'reg_proxy'
             end
-            metric_proxy_pass:inc(1, {ngx.var.chosen_backend, ngx.var.request_method})
         }
         proxy_pass http://$chosen_backend;
     }
 
     location ~ ^/v2/$ {
+        default_type text/plain;
         content_by_lua_block {
             local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
             local proxy_res = ngx.location.capture("/ping-backend/reg_proxy")
@@ -40,7 +40,15 @@ server {
         }
     }
 
-    location ~ ^/fowarder/(?<uri_to_test>.+) {
+    location ~ ^/v2/(_catalog|[a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)?/tags/list) {
+        proxy_pass http://reg_hosted;
+    }
+
+    # TODO: all API calls to /v2/<name>/blobs/uploads/<uuid> goes to hosted (regardless of method)
+    # TODO: where does DELETE of /v2/<name>/blobs/<digest> go? Only hosted? Deleting proxy requires you to go directly to proxy.
+    # TODO: where does DELETE/PUT of /v2/<name>/manifests/<reference> go?
+
+    location ~ ^/proxy-forwarder/(?<uri_to_test>.+) {
         internal;
         proxy_pass http://reg_proxy/$uri_to_test;
     }
@@ -52,6 +60,17 @@ server {
     location ~ ^/ping-backend/(?<backend>.+) {
         internal;
         proxy_pass http://$backend/v2/;
+    }
+
+    location = /healthcheck {
+        default_type application/json;
+        content_by_lua_block {
+            local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
+            local proxy_res = ngx.location.capture("/ping-backend/reg_proxy")
+            ngx.status = 200
+            ngx.say(string.format('{"proxy": "%s", "hosted": "%s"}', proxy_res.status, hosted_res.status))
+            ngx.exit(ngx.OK)
+        }
     }
 
     error_page   500 502 503 504  /50x.html;
