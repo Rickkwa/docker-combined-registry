@@ -31,8 +31,8 @@ jobs:
     - stage: test
       script:
         - docker pull registry.localhost/library/nginx:latest
-        - curl -k --write-out %{http_code} --silent --output /dev/null registry-proxy.localhost/v2/library/nginx/manifest/latest | grep 200
-        - "! curl -k --write-out %{http_code} --silent --output /dev/null registry-hosted.localhost/v2/library/nginx/manifest/latest | grep 200"
+        - curl -k --write-out %{http_code} --silent --output /dev/null registry-proxy.localhost/v2/library/nginx/manifests/latest | grep 200
+        - "! curl -k --write-out %{http_code} --silent --output /dev/null registry-hosted.localhost/v2/library/nginx/manifests/latest | grep 200"
 
     # Test private registry
     - stage: test
@@ -43,5 +43,5 @@ jobs:
         - docker push registry.localhost/mytestimage:latest
         - docker rmi registry.localhost/mytestimage:latest
         - docker pull registry.localhost/mytestimage:latest
-        - curl -k --write-out %{http_code} --silent --output /dev/null registry-hosted.localhost/v2/mytestimage/manifest/latest | grep 200
-        - "! curl -k --write-out %{http_code} --silent --output /dev/null registry-proxy.localhost/v2/mytestimage/manifest/latest | grep 200"
+        - curl -k --write-out %{http_code} --silent --output /dev/null registry-hosted.localhost/v2/mytestimage/manifests/latest | grep 200
+        - "! curl -k --write-out %{http_code} --silent --output /dev/null registry-proxy.localhost/v2/mytestimage/manifests/latest | grep 200"
