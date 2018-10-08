@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO: warn if these environment variables are
-
 if [[ "$ENABLE_AUTH" == true ]]; then
     export BASIC_AUTH="auth_basic \"Docker registry login\";
 auth_basic_user_file \"/etc/nginx/htpasswd\";"
