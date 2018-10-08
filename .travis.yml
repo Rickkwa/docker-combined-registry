@@ -19,10 +19,8 @@ stages:
 services:
   - docker
 
-before_install:
-  - docker-compose build
-
 install:
+  - docker-compose build
   - docker-compose up -d
 
 jobs:
@@ -50,7 +48,7 @@ jobs:
     - stage: test
       env:
         - ENABLE_AUTH=true
-      before_script:
+      before_install:
         - echo 'admin:$apr1$wyZ6v/sB$Zq4FWr9Gc97OdB8HuX/QO/' > nginx/htpasswd  # hunter2
       script:
         - "! docker pull registry.localhost/library/nginx:latest"
