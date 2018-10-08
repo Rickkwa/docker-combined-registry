@@ -63,6 +63,7 @@ server {
     }
 
     location = /healthcheck {
+        auth_basic off;
         default_type application/json;
         content_by_lua_block {
             local hosted_res = ngx.location.capture("/ping-backend/reg_hosted")
