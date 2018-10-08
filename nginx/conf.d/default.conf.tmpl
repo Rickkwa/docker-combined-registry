@@ -2,7 +2,10 @@ server {
     listen       80;
     server_name  ${AGGREGATE_HOSTNAME};
 
+    ${BASIC_AUTH}
+
     location = /metrics {
+        auth_basic off;
         content_by_lua '
             metric_connections:set(ngx.var.connections_reading, {"reading"})
             metric_connections:set(ngx.var.connections_waiting, {"waiting"})
