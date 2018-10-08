@@ -15,11 +15,12 @@ This project uses Nginx with Lua to route requests between both a Docker proxy r
 
 The router image expects three environment variables to be provided:
 
-|Variable|Description|
-|--------|-----------|
-|AGGREGATE_HOSTNAME|The domain name of the single entrypoint.|
-|HOSTED_HOSTNAME|The domain name of the hosted registry to route to.|
-|PROXY_HOSTNAME|The domain name of the proxy registry to route to.|
+|Variable|Required|Description|
+|--------|--------|-----------|
+|AGGREGATE_HOSTNAME|yes|The domain name of the single entrypoint.|
+|HOSTED_HOSTNAME|yes|The domain name of the hosted registry to route to.|
+|PROXY_HOSTNAME|yes|The domain name of the proxy registry to route to.|
+|ENABLE_AUTH|no|A flag, either `true` or `false`, that determines whether to use basic auth. If set to `true`, it expects an `htpasswd` file in `/etc/nginx/htpasswd` of the container.|
 
 ```bash
 # Bring up the registries and router

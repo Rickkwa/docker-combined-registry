@@ -12,11 +12,13 @@ services:
     volumes:
       - "./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro"
       - "./nginx/conf.d/:/etc/nginx/templates_conf.d/:ro"
+      - "./nginx/htpasswd:/etc/nginx/htpasswd:ro"
     restart: unless-stopped
     depends_on:
       - registry-hosted
       - registry-proxy
     environment:
+      - ENABLE_AUTH=${ENABLE_AUTH}
       - AGGREGATE_HOSTNAME=registry.localhost
       - HOSTED_HOSTNAME=registry-hosted.localhost
       - PROXY_HOSTNAME=registry-proxy.localhost

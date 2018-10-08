@@ -45,3 +45,14 @@ jobs:
         - docker pull registry.localhost/mytestimage:latest
         - curl -k --write-out %{http_code} --silent --output /dev/null registry-hosted.localhost/v2/mytestimage/manifests/latest | grep 200
         - "! curl -k --write-out %{http_code} --silent --output /dev/null registry-proxy.localhost/v2/mytestimage/manifests/latest | grep 200"
+
+    # Test basic auth
+    - stage: test
+      env:
+        - ENABLE_AUTH=true
+      before_script:
+        - echo 'admin:$apr1$wyZ6v/sB$Zq4FWr9Gc97OdB8HuX/QO/' > nginx/htpasswd  # hunter2
+      script:
+        - "! docker pull registry.localhost/library/nginx:latest"
+        - docker login --username=admin --password=hunter2
+        - docker pull registry.localhost/library/nginx:latest
