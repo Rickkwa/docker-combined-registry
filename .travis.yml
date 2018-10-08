@@ -52,5 +52,5 @@ jobs:
         - echo 'admin:$apr1$wyZ6v/sB$Zq4FWr9Gc97OdB8HuX/QO/' > nginx/htpasswd  # hunter2
       script:
         - "! docker pull registry.localhost/library/nginx:latest"
-        - docker login --username=admin --password=hunter2
+        - docker login --username=admin --password=hunter2 registry.localhost
         - docker pull registry.localhost/library/nginx:latest
